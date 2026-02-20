@@ -1,6 +1,7 @@
 /**
  * Simple HTTP health check wrapper for Render.io deployments.
  * Exposes a /health endpoint for Render's health checks while running the OpenClaw gateway.
+ * Acts as a reverse proxy to forward all other requests to the gateway.
  * 
  * Usage: node --import tsx render-health-wrapper.ts
  */
@@ -10,11 +11,13 @@ import { spawn } from "node:child_process";
 
 const PORT = parseInt(process.env.PORT ?? "8080", 10);
 const GATEWAY_PORT = 18789; // Default gateway port
+const GATEWAY_HOST = "127.0.0.1";
 
 let gatewayReady = false;
 
-// Create minimal HTTP server for health checks
+// Create HTTP server that proxies to gateway
 const healthServer = http.createServer((req, res) => {
+  // Health check endpoint for Render
   if (req.url === "/health") {
     if (gatewayReady) {
       res.writeHead(200, { "Content-Type": "application/json" });
@@ -26,18 +29,35 @@ const healthServer = http.createServer((req, res) => {
     return;
   }
 
-  // All other requests return 404
-  res.writeHead(404);
-  res.end("Not Found");
+  // Proxy all other requests to the gateway running on loopback
+  const proxyReq = http.request(
+    {
+      hostname: GATEWAY_HOST,
+      port: GATEWAY_PORT,
+      path: req.url,
+      method: req.method,
+      headers: req.headers,
+    },
+    (proxyRes) => {
+      res.writeHead(proxyRes.statusCode ?? 500, proxyRes.headers);
+      proxyRes.pipe(res);
+    }
+  );
+
+  proxyReq.on("error", (err) => {
+    console.error(`[proxy] Error proxying request to ${GATEWAY_HOST}:${GATEWAY_PORT}:`, err.message);
+    res.writeHead(502, { "Content-Type": "text/plain" });
+    res.end("Bad Gateway - Gateway unavailable");
+  });
+
+  req.pipe(proxyReq);
 });
 
-// Start the gateway as a subprocess
+// Start the gateway as a subprocess (bound to loopback since we proxy from wrapper)
 const gatewayProcess = spawn("node", [
   "openclaw.mjs",
   "gateway",
   "--allow-unconfigured",
-  "--bind",
-  "lan",
   "--port",
   String(GATEWAY_PORT),
 ]);
@@ -68,17 +88,19 @@ gatewayProcess.on("exit", (code) => {
   process.exit(code ?? 1);
 });
 
-// Start health check server
+// Start health check & proxy server
 healthServer.listen(PORT, "0.0.0.0", () => {
-  console.log(`[health-wrapper] Health check server listening on port ${PORT}`);
-  console.log(`[health-wrapper] Gateway will listen on port ${GATEWAY_PORT}`);
+  console.log(`[health-wrapper] Proxy server listening on port ${PORT}`);
+  console.log(`[health-wrapper] Gateway will listen on port ${GATEWAY_PORT} (loopback only)`);
+  console.log(`[health-wrapper] Requests are proxied: port ${PORT} -> localhost:${GATEWAY_PORT}`);
 });
 
 // Graceful shutdown
 process.on("SIGTERM", () => {
   console.log("[health-wrapper] Received SIGTERM, shutting down gracefully...");
   healthServer.close(() => {
-    console.log("[health-wrapper] Health server closed");
+    console.log("[health-wrapper] Proxy server closed");
     gatewayProcess.kill("SIGTERM");
   });
 });
+
