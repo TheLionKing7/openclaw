@@ -53,6 +53,7 @@ RUN chown -R node:node /app
 # This reduces the attack surface by preventing container escape via root privileges
 USER node
 
-# Start gateway server. Fly.io will override this with [processes] config in fly.toml.
-# Default: bind to loopback for security.
-CMD ["node", "openclaw.mjs", "gateway", "--allow-unconfigured"]
+# For Render.io deployments: use health wrapper that exposes /health endpoint for health checks
+# while running the gateway in the background on port 18789.
+# For other platforms: override CMD to run gateway directly.
+CMD ["node", "--import", "tsx", "src/render-health-wrapper.ts"]
