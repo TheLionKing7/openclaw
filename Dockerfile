@@ -59,10 +59,7 @@ RUN chown -R node:node /app
 # This reduces the attack surface by preventing container escape via root privileges
 USER node
 
-# Start gateway server with default config.
-# Binds to loopback (127.0.0.1) by default for security.
-#
-# For container platforms requiring external health checks:
-#   1. Set OPENCLAW_GATEWAY_TOKEN or OPENCLAW_GATEWAY_PASSWORD env var
-#   2. Override CMD: ["node","openclaw.mjs","gateway","--allow-unconfigured","--bind","lan"]
-CMD ["node", "openclaw.mjs", "gateway", "--allow-unconfigured"]
+# Start gateway server with Render/container networking.
+# Bind to LAN (0.0.0.0) so health checks and external traffic can reach it.
+# OPENCLAW_GATEWAY_TOKEN is auto-generated in render.yaml for auth.
+CMD ["node", "openclaw.mjs", "gateway", "--allow-unconfigured", "--bind", "lan"]
