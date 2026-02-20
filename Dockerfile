@@ -38,17 +38,11 @@ RUN if [ -n "$OPENCLAW_INSTALL_BROWSER" ]; then \
 
 COPY . .
 
-# Optimize Node.js for Pro plan (~2GB available).
-# Use 1.5GB heap to allow room for system processes.
-ENV NODE_OPTIONS="--max-old-space-size=1536"
-
 RUN pnpm build
 # Force pnpm for UI build (Bun may fail on ARM/Synology architectures)
 ENV OPENCLAW_PREFER_PNPM=1
 RUN pnpm ui:build
 
-# Clear NODE_OPTIONS for runtime (let Node use default memory management)
-ENV NODE_OPTIONS=""
 ENV NODE_ENV=production
 
 # Allow non-root user to write temp files during runtime/tests.
@@ -59,7 +53,6 @@ RUN chown -R node:node /app
 # This reduces the attack surface by preventing container escape via root privileges
 USER node
 
-# Start gateway server with Render/container networking.
-# Bind to LAN (0.0.0.0) so health checks and external traffic can reach it.
-# OPENCLAW_GATEWAY_TOKEN is auto-generated in render.yaml for auth.
-CMD ["node", "openclaw.mjs", "gateway", "--allow-unconfigured", "--bind", "lan"]
+# Start gateway server. Fly.io will override this with [processes] config in fly.toml.
+# Default: bind to loopback for security.
+CMD ["node", "openclaw.mjs", "gateway", "--allow-unconfigured"]
