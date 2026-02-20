@@ -37,6 +37,11 @@ RUN if [ -n "$OPENCLAW_INSTALL_BROWSER" ]; then \
     fi
 
 COPY . .
+
+# Optimize Node.js for memory-constrained environments (Render ~1GB).
+# Set max heap to 512MB to leave room for system and prevent OOM-kill during build.
+ENV NODE_OPTIONS="--max-old-space-size=512"
+
 RUN pnpm build
 # Force pnpm for UI build (Bun may fail on ARM/Synology architectures)
 ENV OPENCLAW_PREFER_PNPM=1
