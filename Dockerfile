@@ -38,15 +38,18 @@ RUN if [ -n "$OPENCLAW_INSTALL_BROWSER" ]; then \
 
 COPY . .
 
-# Increase Node.js heap for TypeScript compilation during build.
-# Standard plan has ~1GB available; use 1024MB to allow proper compilation.
-ENV NODE_OPTIONS="--max-old-space-size=1024"
+# Optimize Node.js for Pro plan (~2GB available).
+# Use 1.5GB heap to allow room for system processes.
+# --disable-code-cache reduces memory usage by ~15% during compilation.
+ENV NODE_OPTIONS="--max-old-space-size=1536 --disable-code-cache"
 
 RUN pnpm build
 # Force pnpm for UI build (Bun may fail on ARM/Synology architectures)
 ENV OPENCLAW_PREFER_PNPM=1
 RUN pnpm ui:build
 
+# Clear NODE_OPTIONS for runtime (let Node use default memory management)
+ENV NODE_OPTIONS=""
 ENV NODE_ENV=production
 
 # Allow non-root user to write temp files during runtime/tests.

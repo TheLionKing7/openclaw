@@ -2,7 +2,10 @@ services:
   - type: web
     name: openclaw
     runtime: docker
-    plan: standard
+    # OpenClaw requires ~2GB memory for TypeScript compilation.
+    # Starter (512MB) and Standard (1GB) trigger OOM errors.
+    # Pro plan (2GB+) is minimum recommended for reliable builds.
+    plan: pro
     healthCheckPath: /health
     envVars:
       - key: PORT
