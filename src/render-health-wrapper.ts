@@ -68,15 +68,26 @@ proxyServer.on("upgrade", (req, socket, head) => {
   const gwSocket = net.createConnection(GATEWAY_PORT, GATEWAY_HOST, () => {
     console.log(`[proxy] Connected to gateway for WebSocket`);
     
-    // Forward the upgrade request to the gateway
-    const requestLine = `${req.method} ${req.url} HTTP/${req.httpVersion}`;
-    gwSocket.write(`${requestLine}\r\n`);
+    // Build the full WebSocket upgrade request
+    let upgradeRequest = `${req.method} ${req.url} HTTP/${req.httpVersion}\r\n`;
     
-    // Forward headers
+    // Forward headers, preserving Connection and Upgrade headers
     for (const [key, value] of Object.entries(req.headers)) {
-      gwSocket.write(`${key}: ${value}\r\n`);
+      upgradeRequest += `${key}: ${Array.isArray(value) ? value.join(", ") : value}\r\n`;
     }
-    gwSocket.write("\r\n");
+    
+    // Ensure critical WebSocket headers are present
+    if (!req.headers["connection"]?.toString().toLowerCase().includes("upgrade")) {
+      upgradeRequest += "Connection: Upgrade\r\n";
+    }
+    if (!req.headers["upgrade"]) {
+      upgradeRequest += "Upgrade: websocket\r\n";
+    }
+    
+    upgradeRequest += "\r\n";
+    
+    console.log(`[proxy] WebSocket headers:\n${upgradeRequest}`);
+    gwSocket.write(upgradeRequest);
     
     // Forward any initial data (part of WebSocket handshake)
     if (head && head.length > 0) {
@@ -102,7 +113,14 @@ const gatewayProcess = spawn("node", [
   "--allow-unconfigured",
   "--port",
   String(GATEWAY_PORT),
-]);
+], {
+  // Ensure environment variables are inherited
+  env: {
+    ...process.env,
+    NODE_ENV: "production",
+  },
+  stdio: ["ignore", "pipe", "pipe"],
+});
 
 gatewayProcess.stdout?.on("data", (data) => {
   const output = data.toString();
