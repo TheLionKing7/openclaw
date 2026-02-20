@@ -40,8 +40,7 @@ COPY . .
 
 # Optimize Node.js for Pro plan (~2GB available).
 # Use 1.5GB heap to allow room for system processes.
-# --disable-code-cache reduces memory usage by ~15% during compilation.
-ENV NODE_OPTIONS="--max-old-space-size=1536 --disable-code-cache"
+ENV NODE_OPTIONS="--max-old-space-size=1536"
 
 RUN pnpm build
 # Force pnpm for UI build (Bun may fail on ARM/Synology architectures)
