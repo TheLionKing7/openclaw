@@ -11,25 +11,52 @@
   },
   "models": {
     "providers": {
-      "groq": {
-        "baseUrl": "https://api.groq.com/openai/v1",
+      "anthropic": {
+        "baseUrl": "https://api.anthropic.com",
+        "api": "anthropic-messages",
+        "models": [
+          {
+            "id": "claude-opus-4-6",
+            "name": "Claude Opus 4.6",
+            "api": "anthropic-messages",
+            "reasoning": true,
+            "input": ["text"],
+            "cost": {
+              "input": 3,
+              "output": 15,
+              "cacheRead": 0.3,
+              "cacheWrite": 3.75
+            },
+            "contextWindow": 200000,
+            "maxTokens": 16000
+          }
+        ]
+      },
+      "deepseek": {
+        "baseUrl": "https://api.deepseek.com",
         "api": "openai-completions",
         "models": [
           {
-            "id": "gemma-7b-it",
-            "name": "Gemma 7B IT",
+            "id": "deepseek-chat",
+            "name": "DeepSeek Chat",
             "api": "openai-completions",
             "reasoning": false,
             "input": ["text"],
             "cost": {
-              "input": 0.07,
-              "output": 0.07,
+              "input": 0.14,
+              "output": 0.28,
               "cacheRead": 0,
               "cacheWrite": 0
             },
-            "contextWindow": 8192,
-            "maxTokens": 8192
-          },
+            "contextWindow": 64000,
+            "maxTokens": 4096
+          }
+        ]
+      },
+      "groq": {
+        "baseUrl": "https://api.groq.com/openai/v1",
+        "api": "openai-completions",
+        "models": [
           {
             "id": "llama3-8b-8192",
             "name": "Llama 3 8B",
@@ -53,7 +80,10 @@
     "list": [
       {
         "id": "main",
-        "model": "groq/gemma-7b-it"
+        "model": {
+          "primary": "anthropic/claude-opus-4-6",
+          "fallbacks": ["deepseek/deepseek-chat", "groq/llama3-8b-8192"]
+        }
       }
     ]
   }
