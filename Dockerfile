@@ -54,5 +54,5 @@ RUN chown -R node:node /app
 USER node
 
 # For Render.io deployments: bind directly to LAN on the port Render expects
-# Load token-based auth config and disable device pairing for remote access
-CMD ["node", "openclaw.mjs", "gateway", "--allow-unconfigured", "--bind", "lan", "--port", "8080", "--config", "/app/openclaw.json"]
+# Config is auto-loaded from openclaw.json in the current directory
+CMD ["node", "openclaw.mjs", "gateway", "--allow-unconfigured", "--bind", "lan", "--port", "8080"]
