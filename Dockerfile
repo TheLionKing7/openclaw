@@ -53,7 +53,6 @@ RUN chown -R node:node /app
 # This reduces the attack surface by preventing container escape via root privileges
 USER node
 
-# For Render.io deployments: use health wrapper that exposes /health endpoint for health checks
-# while running the gateway in the background on port 18789.
-# For other platforms: override CMD to run gateway directly.
-CMD ["node", "--import", "tsx", "src/render-health-wrapper.ts"]
+# For Render.io deployments: bind directly to LAN on the port Render expects
+# Remove the proxy wrapper - it complicates WebSocket handling
+CMD ["node", "openclaw.mjs", "gateway", "--allow-unconfigured", "--bind", "lan", "--port", "8080"]
