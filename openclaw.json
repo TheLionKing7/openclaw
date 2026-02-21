@@ -16,21 +16,6 @@
         "api": "openai-completions",
         "models": [
           {
-            "id": "mixtral-8x7b-32768",
-            "name": "Mixtral 8x7B",
-            "api": "openai-completions",
-            "reasoning": false,
-            "input": ["text"],
-            "cost": {
-              "input": 0.24,
-              "output": 0.24,
-              "cacheRead": 0,
-              "cacheWrite": 0
-            },
-            "contextWindow": 32768,
-            "maxTokens": 29000
-          },
-          {
             "id": "llama-3.1-70b-versatile",
             "name": "Llama 3.1 70B",
             "api": "openai-completions",
@@ -68,7 +53,7 @@
     "list": [
       {
         "id": "main",
-        "model": "groq/mixtral-8x7b-32768"
+        "model": "groq/llama-3.1-70b-versatile"
       }
     ]
   }
