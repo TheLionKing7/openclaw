@@ -1,11 +1,11 @@
 {
   "gateway": {
     "controlUi": {
-      "enabled": true
+      "enabled": true,
+      "allowInsecureAuth": true
     },
     "auth": {
-      "mode": "token",
-      "requireDevicePairing": false
+      "mode": "token"
     },
     "trustedProxies": ["127.0.0.1", "::1", "0.0.0.0/0"]
   }
