@@ -22,11 +22,20 @@ let gatewayReady = false;
 const stateDir = process.env.OPENCLAW_STATE_DIR || "/data/.openclaw";
 const configDir = path.dirname(stateDir);
 
+console.log(`[proxy] Config: OPENCLAW_STATE_DIR="${stateDir}"`);
+console.log(`[proxy] Token exists: ${!!process.env.OPENCLAW_GATEWAY_TOKEN}`);
+
 try {
   // Ensure directory exists
   if (!fs.existsSync(configDir)) {
     fs.mkdirSync(configDir, { recursive: true });
     console.log(`[proxy] Created config directory: ${configDir}`);
+  }
+
+  // Ensure state directory exists too
+  if (!fs.existsSync(stateDir)) {
+    fs.mkdirSync(stateDir, { recursive: true });
+    console.log(`[proxy] Created state directory: ${stateDir}`);
   }
 
   // Create/update openclaw.json with trusted proxies for the health wrapper proxy
@@ -52,7 +61,8 @@ try {
 
   // Write config
   fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
-  console.log(`[proxy] Updated config with trustedProxies: ${JSON.stringify(config.gateway.trustedProxies)}`);
+  console.log(`[proxy] Config written: ${configPath}`);
+  console.log(`[proxy] trustedProxies configured: ${JSON.stringify(config.gateway.trustedProxies)}`);
 } catch (err) {
   console.error(`[proxy] Failed to setup config:`, err);
   process.exit(1);
@@ -167,14 +177,19 @@ proxyServer.on("upgrade", (req, socket, head) => {
 });
 
 // Start the gateway as a subprocess (bound to loopback)
-const gatewayProcess = spawn("node", [
+// Wait for config to be written first
+const gatewayArgs = [
   "openclaw.mjs",
   "gateway",
   "--allow-unconfigured",
   "--port",
   String(GATEWAY_PORT),
-], {
-  // Ensure environment variables are inherited
+];
+
+console.log(`[proxy] Starting gateway with args: ${gatewayArgs.join(" ")}`);
+
+const gatewayProcess = spawn("node", gatewayArgs, {
+  // Ensure environment variables are inherited (including OPENCLAW_GATEWAY_TOKEN, OPENCLAW_STATE_DIR)
   env: {
     ...process.env,
     NODE_ENV: "production",
@@ -183,19 +198,31 @@ const gatewayProcess = spawn("node", [
 });
 
 gatewayProcess.stdout?.on("data", (data) => {
-  const output = data.toString();
-  console.log(`[gateway] ${output}`);
+  const output = data.toString().trim();
+  if (output) {
+    console.log(`[gateway] ${output}`);
+  }
   
-  // Mark gateway as ready
-  if (output.includes("listening") || output.includes("started") || output.includes("bound")) {
-    gatewayReady = true;
-    console.log("[proxy] Gateway detected as ready");
+  // Mark gateway as ready when we see specific startup messages
+  if (!gatewayReady && (
+    output.includes("listening on") || 
+    output.includes("gateway ready") ||
+    output.includes("WebSocket server") ||
+    output.includes("started successfully")
+  )) {
+    // Add a small delay to ensure gateway is truly ready
+    setTimeout(() => {
+      gatewayReady = true;
+      console.log("[proxy] Gateway detected as ready - accepting connections");
+    }, 1000);
   }
 });
 
 gatewayProcess.stderr?.on("data", (data) => {
-  const output = data.toString();
-  console.error(`[gateway] ${output}`);
+  const output = data.toString().trim();
+  if (output) {
+    console.error(`[gateway stderr] ${output}`);
+  }
 });
 
 gatewayProcess.on("error", (err) => {
