@@ -16,23 +16,23 @@
         "api": "openai-completions",
         "models": [
           {
-            "id": "llama-3.1-70b-versatile",
-            "name": "Llama 3.1 70B",
+            "id": "gemma-7b-it",
+            "name": "Gemma 7B IT",
             "api": "openai-completions",
             "reasoning": false,
             "input": ["text"],
             "cost": {
-              "input": 0.59,
-              "output": 0.79,
+              "input": 0.07,
+              "output": 0.07,
               "cacheRead": 0,
               "cacheWrite": 0
             },
-            "contextWindow": 131072,
+            "contextWindow": 8192,
             "maxTokens": 8192
           },
           {
-            "id": "llama-3.1-8b-instant",
-            "name": "Llama 3.1 8B",
+            "id": "llama3-8b-8192",
+            "name": "Llama 3 8B",
             "api": "openai-completions",
             "reasoning": false,
             "input": ["text"],
@@ -42,7 +42,7 @@
               "cacheRead": 0,
               "cacheWrite": 0
             },
-            "contextWindow": 131072,
+            "contextWindow": 8192,
             "maxTokens": 8192
           }
         ]
@@ -53,7 +53,7 @@
     "list": [
       {
         "id": "main",
-        "model": "groq/llama-3.1-70b-versatile"
+        "model": "groq/gemma-7b-it"
       }
     ]
   }
