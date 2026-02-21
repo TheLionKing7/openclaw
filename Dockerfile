@@ -54,5 +54,5 @@ RUN chown -R node:node /app
 USER node
 
 # For Render.io deployments: bind directly to LAN on the port Render expects
-# Remove the proxy wrapper - it complicates WebSocket handling
-CMD ["node", "openclaw.mjs", "gateway", "--allow-unconfigured", "--bind", "lan", "--port", "8080"]
+# Load token-based auth config and disable device pairing for remote access
+CMD ["node", "openclaw.mjs", "gateway", "--allow-unconfigured", "--bind", "lan", "--port", "8080", "--config", "/app/openclaw.json"]
