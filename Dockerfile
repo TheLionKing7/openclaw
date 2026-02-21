@@ -54,5 +54,5 @@ RUN chown -R node:node /app
 USER node
 
 # For Render.io deployments: bind directly to LAN on the port Render expects
-# Config is auto-loaded from openclaw.json in the current directory
-CMD ["node", "openclaw.mjs", "gateway", "--allow-unconfigured", "--bind", "lan", "--port", "8080"]
+# Copy config to state directory before start (config loads from OPENCLAW_STATE_DIR)
+CMD ["sh", "-c", "mkdir -p $OPENCLAW_STATE_DIR && cp /app/openclaw.json $OPENCLAW_STATE_DIR/ 2>/dev/null || true && node openclaw.mjs gateway --allow-unconfigured --bind lan --port 8080"]
